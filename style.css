@@ -77,13 +77,16 @@ h1 {
 
 .token-visual {
   position: absolute;
-  width: 100%;
-  height: 100%;
+  width: 6%;      /* small square */
+  height: 6%;
+  pointer-events: auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: auto;
+  transform: translate(-50%, -50%);
+  z-index: 20;
 }
+
 
 .token {
   width: 70%;
