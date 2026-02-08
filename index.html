@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Classic Prank Ludo 3D</title>
+  <title>Ludo 3D Classic Edition</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Classic Prank Ludo 3D</h1>
-  <div class="subtitle">4-player classic rules + “Code Red” luck + dice lock.</div>
+  <h1>Ludo 3D Classic Edition</h1>
+  <div class="subtitle">4-player classic rules with 3D dice.</div>
 
   <div class="game-container">
     <div class="board-wrapper">
@@ -19,12 +19,32 @@
       <div>
         <div class="section-title">Players (1–4)</div>
         <div class="players-config">
-          <div class="player-input"><div class="player-label"><span class="color-dot red"></span> Red</div><input type="text" id="player-red" placeholder="Name (e.g. Code Red)"></div>
-          <div class="player-input"><div class="player-label"><span class="color-dot green"></span> Green</div><input type="text" id="player-green" placeholder="Name"></div>
-          <div class="player-input"><div class="player-label"><span class="color-dot yellow"></span> Yellow</div><input type="text" id="player-yellow" placeholder="Name"></div>
-          <div class="player-input"><div class="player-label"><span class="color-dot blue"></span> Blue</div><input type="text" id="player-blue" placeholder="Name"></div>
+          <div class="player-input">
+            <div class="player-label">
+              <span class="color-dot red"></span> Red
+            </div>
+            <input type="text" id="player-red" placeholder="Name">
+          </div>
+          <div class="player-input">
+            <div class="player-label">
+              <span class="color-dot green"></span> Green
+            </div>
+            <input type="text" id="player-green" placeholder="Name">
+          </div>
+          <div class="player-input">
+            <div class="player-label">
+              <span class="color-dot yellow"></span> Yellow
+            </div>
+            <input type="text" id="player-yellow" placeholder="Name">
+          </div>
+          <div class="player-input">
+            <div class="player-label">
+              <span class="color-dot blue"></span> Blue
+            </div>
+            <input type="text" id="player-blue" placeholder="Name">
+          </div>
         </div>
-        <div class="hint">Leave colors empty if not used. Turn order: Red → Green → Yellow → Blue.</div>
+        <div class="hint">Turn order: Red → Green → Yellow → Blue.</div>
       </div>
 
       <div class="controls">
@@ -43,12 +63,16 @@
       </div>
 
       <div class="status">
-        <div class="status-line"><span class="status-label">Current player</span><span class="status-value" id="current-player">—</span></div>
-        <div class="status-line"><span class="status-label">Last roll</span><span class="status-value" id="last-roll">—</span></div>
+        <div class="status-line">
+          <span class="status-label">Current player</span>
+          <span class="status-value" id="current-player">—</span>
+        </div>
+        <div class="status-line">
+          <span class="status-label">Last roll</span>
+          <span class="status-value" id="last-roll">—</span>
+        </div>
         <div class="log" id="log"></div>
       </div>
-
-      <div class="hint">Secret: any player named <strong>Code Red</strong> has ~50% extra chance to roll 5 or 6.</div>
     </div>
   </div>
 
