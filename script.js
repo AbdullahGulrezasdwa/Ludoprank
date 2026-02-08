@@ -26,8 +26,10 @@ const TRACK_LENGTH = 52;
 const HOME_POS = -1;
 const FINISHED_POS = 52;
 
+// Safe squares (indices on main track)
 const SAFE_INDICES = [0, 8, 13, 21, 26, 34, 39, 47];
 
+// Start index on main track for each color
 const START_INDEX = {
   red: 0,
   green: 13,
@@ -35,17 +37,20 @@ const START_INDEX = {
   blue: 39,
 };
 
-const COLOR_ROW = {
-  red: 0,
-  green: 1,
-  yellow: 2,
-  blue: 3,
+// For finished tokens, we place them in a small cluster per color
+const FINISH_SPOTS = {
+  red:   [{x: 50, y: 50}, {x: 46, y: 50}, {x: 54, y: 50}, {x: 50, y: 46}],
+  green: [{x: 50, y: 50}, {x: 46, y: 54}, {x: 54, y: 54}, {x: 50, y: 58}],
+  yellow:[{x: 50, y: 50}, {x: 42, y: 50}, {x: 42, y: 46}, {x: 42, y: 54}],
+  blue:  [{x: 50, y: 50}, {x: 58, y: 50}, {x: 58, y: 46}, {x: 58, y: 54}],
 };
 
 let players = [];
 let currentPlayerIndex = 0;
 let gameStarted = false;
 let rolling = false;
+let pendingRoll = null;
+let awaitingMove = false;
 
 // =========================
 // LOGGING & STATUS
@@ -74,18 +79,65 @@ function setLastRoll(value) {
 // BOARD VISUAL
 // =========================
 function buildBoard() {
-  // No grid cells — board image handles visuals
   boardEl.innerHTML = "";
 }
+
+// =========================
+// PATH COORDINATES (LOOP AROUND BOARD)
+// =========================
+// We'll approximate a loop path around the board using percentages.
+// This isn't pixel-perfect Ludo, but visually it goes around the edges
+// and feels like a real track.
+
+const TRACK_COORDS = [];
+(function buildTrackCoords() {
+  const centerX = 50;
+  const centerY = 50;
+  const radius = 38; // stay inside board
+  for (let i = 0; i < TRACK_LENGTH; i++) {
+    const angle = (2 * Math.PI * i) / TRACK_LENGTH - Math.PI / 2; // start at top
+    const x = centerX + radius * Math.cos(angle);
+    const y = centerY + radius * Math.sin(angle);
+    TRACK_COORDS.push({ x, y });
+  }
+})();
+
+// Home positions (where tokens sit before entering track)
+const HOME_SPOTS = {
+  red: [
+    {x: 25, y: 25},
+    {x: 30, y: 25},
+    {x: 25, y: 30},
+    {x: 30, y: 30},
+  ],
+  green: [
+    {x: 75, y: 25},
+    {x: 80, y: 25},
+    {x: 75, y: 30},
+    {x: 80, y: 30},
+  ],
+  yellow: [
+    {x: 25, y: 75},
+    {x: 30, y: 75},
+    {x: 25, y: 80},
+    {x: 30, y: 80},
+  ],
+  blue: [
+    {x: 75, y: 75},
+    {x: 80, y: 75},
+    {x: 75, y: 80},
+    {x: 80, y: 80},
+  ],
+};
 
 // =========================
 // DICE
 // =========================
 function biasedRollFor(player) {
+  // Hidden buff: any name containing "code red" has ~50% extra chance for 5 or 6
   if (!player.isCodeRed) {
     return Math.floor(Math.random() * 6) + 1;
   }
-  // Code Red: ~50% chance to get 5 or 6
   if (Math.random() < 0.5) {
     return Math.random() < 0.5 ? 5 : 6;
   }
@@ -112,40 +164,39 @@ function animateDiceTo(value) {
 function renderTokens() {
   tokenLayerEl.innerHTML = "";
 
-  const laneHeight = 100 / 4;
-
-  players.forEach(player => {
-    const row = COLOR_ROW[player.color];
-
-    player.tokens.forEach((pos, idx) => {
+  players.forEach((player, pIndex) => {
+    player.tokens.forEach((pos, tIndex) => {
       const tokenVisual = document.createElement("div");
       tokenVisual.className = "token-visual";
 
       const token = document.createElement("div");
       token.className = `token ${player.color}`;
+      token.dataset.playerIndex = pIndex;
+      token.dataset.tokenIndex = tIndex;
+
       tokenVisual.appendChild(token);
 
-      let xPercent;
+      let coord;
 
       if (pos === HOME_POS) {
-        // Left side "home" area
-        xPercent = 5;
+        coord = HOME_SPOTS[player.color][tIndex];
       } else if (pos === FINISHED_POS) {
-        // Right side "finished" area
-        xPercent = 95;
+        coord = FINISH_SPOTS[player.color][tIndex];
       } else {
-        // Linear track across the board
-        xPercent = 10 + (pos / (TRACK_LENGTH - 1)) * 80;
+        coord = TRACK_COORDS[pos];
       }
 
-      const yPercent = row * laneHeight + laneHeight / 2;
-
-      tokenVisual.style.left = `${xPercent}%`;
-      tokenVisual.style.top = `${yPercent}%`;
+      tokenVisual.style.left = `${coord.x}%`;
+      tokenVisual.style.top = `${coord.y}%`;
 
       tokenLayerEl.appendChild(tokenVisual);
     });
   });
+
+  // Attach click handlers only when awaiting move
+  if (awaitingMove && pendingRoll != null) {
+    enableTokenClicksForCurrentPlayer();
+  }
 }
 
 // =========================
@@ -153,6 +204,31 @@ function renderTokens() {
 // =========================
 function isSafeIndex(index) {
   return SAFE_INDICES.includes(index);
+}
+
+function getMovableTokens(player, roll) {
+  const tokens = player.tokens;
+  const movable = [];
+
+  for (let i = 0; i < tokens.length; i++) {
+    const pos = tokens[i];
+
+    if (pos === HOME_POS) {
+      if (roll === 6) {
+        movable.push(i);
+      }
+      continue;
+    }
+
+    if (pos === FINISHED_POS) continue;
+
+    const newPos = pos + roll;
+    if (newPos > FINISHED_POS) continue;
+
+    movable.push(i);
+  }
+
+  return movable;
 }
 
 function moveToken(player, tokenIndex, roll) {
@@ -175,8 +251,6 @@ function moveToken(player, tokenIndex, roll) {
   }
 
   const newPos = pos + roll;
-
-  // BUG FIX: use FINISHED_POS, not FINFINISHED_POS
   if (newPos > FINISHED_POS) {
     log(`${player.name} needs an exact roll to finish.`, player.color);
     return;
@@ -189,9 +263,9 @@ function moveToken(player, tokenIndex, roll) {
   }
 
   tokens[tokenIndex] = newPos;
-  log(`${player.name} moved a token to position ${newPos}.`, player.color);
+  log(`${player.name} moved a token along the track.`, player.color);
 
-  // Capture logic (if not on a safe index)
+  // Capture logic
   if (!isSafeIndex(newPos)) {
     players.forEach(other => {
       if (other === player) return;
@@ -205,38 +279,13 @@ function moveToken(player, tokenIndex, roll) {
   }
 }
 
-function autoChooseTokenIndex(player, roll) {
-  const tokens = player.tokens;
-
-  // 1) Prefer finishing moves
-  for (let i = 0; i < tokens.length; i++) {
-    if (tokens[i] >= 0 && tokens[i] < FINISHED_POS && tokens[i] + roll === FINISHED_POS) {
-      return i;
-    }
-  }
-
-  // 2) If roll is 6, try to bring a token out from home
-  if (roll === 6) {
-    const homeIdx = tokens.findIndex(p => p === HOME_POS);
-    if (homeIdx !== -1) return homeIdx;
-  }
-
-  // 3) Otherwise, move the first token that can move without overshooting
-  for (let i = 0; i < tokens.length; i++) {
-    if (tokens[i] >= 0 && tokens[i] < FINISHED_POS && tokens[i] + roll <= FINISHED_POS) {
-      return i;
-    }
-  }
-
-  // 4) No valid moves
-  return -1;
-}
-
 function checkWin(player) {
   if (player.tokens.every(p => p === FINISHED_POS)) {
     log(`${player.name} has WON the game!`, player.color);
     btnRoll.disabled = true;
     gameStarted = false;
+    awaitingMove = false;
+    pendingRoll = null;
     return true;
   }
   return false;
@@ -248,6 +297,88 @@ function checkWin(player) {
 function nextPlayer() {
   currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
   setStatusPlayer(players[currentPlayerIndex]);
+}
+
+// =========================
+// TOKEN CLICK HANDLING
+// =========================
+function clearHighlights() {
+  document.querySelectorAll(".token.highlight").forEach(el => {
+    el.classList.remove("highlight");
+  });
+}
+
+function enableTokenClicksForCurrentPlayer() {
+  clearHighlights();
+  const player = players[currentPlayerIndex];
+  const roll = pendingRoll;
+
+  const movable = getMovableTokens(player, roll);
+  if (movable.length === 0) {
+    log(`${player.name} has no valid moves.`, player.color);
+    awaitingMove = false;
+    pendingRoll = null;
+
+    const won = checkWin(player);
+    if (!won) {
+      if (roll !== 6) {
+        nextPlayer();
+      } else {
+        log(`${player.name} gets another turn for rolling a 6!`, player.color);
+      }
+    }
+    renderTokens();
+    return;
+  }
+
+  // Highlight movable tokens
+  const tokenEls = document.querySelectorAll(".token");
+  tokenEls.forEach(tokenEl => {
+    const pIndex = Number(tokenEl.dataset.playerIndex);
+    const tIndex = Number(tokenEl.dataset.tokenIndex);
+    if (pIndex === currentPlayerIndex && movable.includes(tIndex)) {
+      tokenEl.classList.add("highlight");
+      tokenEl.addEventListener("click", onTokenClick);
+    }
+  });
+}
+
+function disableAllTokenClicks() {
+  document.querySelectorAll(".token").forEach(tokenEl => {
+    tokenEl.replaceWith(tokenEl.cloneNode(true)); // quick way to remove listeners
+  });
+}
+
+function onTokenClick(e) {
+  if (!awaitingMove || pendingRoll == null) return;
+
+  const tokenEl = e.currentTarget;
+  const pIndex = Number(tokenEl.dataset.playerIndex);
+  const tIndex = Number(tokenEl.dataset.tokenIndex);
+
+  if (pIndex !== currentPlayerIndex) return;
+
+  const player = players[currentPlayerIndex];
+  const roll = pendingRoll;
+
+  disableAllTokenClicks();
+  clearHighlights();
+
+  moveToken(player, tIndex, roll);
+  renderTokens();
+
+  const won = checkWin(player);
+
+  awaitingMove = false;
+  pendingRoll = null;
+
+  if (!won) {
+    if (roll !== 6) {
+      nextPlayer();
+    } else {
+      log(`${player.name} gets another turn for rolling a 6!`, player.color);
+    }
+  }
 }
 
 // =========================
@@ -284,7 +415,8 @@ btnStart.addEventListener("click", () => {
 
   players.forEach(p => {
     if (p.isCodeRed) {
-      log(`${p.name} has the CODE RED buff (better 5/6 odds).`, p.color);
+      // Silent buff, no visible hint
+      console.debug(`${p.name} has hidden CODE RED buff.`);
     }
   });
 
@@ -293,40 +425,25 @@ btnStart.addEventListener("click", () => {
 });
 
 btnRoll.addEventListener("click", () => {
-  if (!gameStarted || rolling) return;
+  if (!gameStarted || rolling || awaitingMove) return;
   rolling = true;
 
   const player = players[currentPlayerIndex];
 
-  // Quick fake spin
   const fakeValue = Math.floor(Math.random() * 6) + 1;
   animateDiceTo(fakeValue);
 
   setTimeout(() => {
     const roll = biasedRollFor(player);
+    pendingRoll = roll;
     animateDiceTo(roll);
     setLastRoll(roll);
     log(`${player.name} rolled a ${roll}.`, player.color);
 
-    const tokenIndex = autoChooseTokenIndex(player, roll);
-    if (tokenIndex === -1) {
-      log(`${player.name} has no valid moves.`, player.color);
-    } else {
-      moveToken(player, tokenIndex, roll);
-    }
-
-    renderTokens();
-    const won = checkWin(player);
-
-    if (!won) {
-      if (roll !== 6) {
-        nextPlayer();
-      } else {
-        log(`${player.name} gets another turn for rolling a 6!`, player.color);
-      }
-    }
-
+    awaitingMove = true;
     rolling = false;
+
+    renderTokens(); // this will enable clicks for movable tokens
   }, 600);
 });
 
