@@ -37,26 +37,18 @@ h1 {
   width: 100%;
 }
 
-/* ========================= */
-/* BOARD + WRAPPER           */
-/* ========================= */
-
 .board-wrapper {
   background: #111;
   padding: 10px;
   border-radius: 8px;
   box-shadow: 0 0 18px rgba(0,0,0,0.8);
-
-  /* Make this the positioning context for tokens */
   position: relative;
-  width: 520px;
-  height: 520px;
 }
 
-/* REAL LUDO BOARD IMAGE */
+/* BOARD IMAGE */
 .board {
-  width: 100%;
-  height: 100%;
+  width: 520px;
+  height: 520px;
   border-radius: 4px;
   overflow: hidden;
   border: 3px solid #333;
@@ -68,29 +60,18 @@ h1 {
   background-repeat: no-repeat;
 }
 
-/* Hide old grid cells if any */
-.cell {
-  display: none;
-}
-
-/* ========================= */
-/* TOKEN LAYER               */
-/* ========================= */
-
+/* TOKEN LAYER */
 .token-layer {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 10px; /* match board padding */
   pointer-events: none;
   z-index: 10;
 }
 
 .token-visual {
   position: absolute;
-  width: 5%;
-  height: 5%;
+  width: 6%;
+  height: 6%;
   pointer-events: auto;
   display: flex;
   align-items: center;
@@ -118,10 +99,7 @@ h1 {
   box-shadow: 0 0 12px rgba(255,235,59,0.9);
 }
 
-/* ========================= */
-/* SIDEBAR                   */
-/* ========================= */
-
+/* SIDEBAR */
 .sidebar {
   min-width: 260px;
   max-width: 320px;
@@ -193,10 +171,7 @@ h1 {
   border-color: #4caf50;
 }
 
-/* ========================= */
-/* BUTTONS                   */
-/* ========================= */
-
+/* BUTTONS */
 .controls {
   display: flex;
   flex-direction: column;
@@ -244,10 +219,7 @@ h1 {
   transform: none;
 }
 
-/* ========================= */
-/* STATUS + LOG              */
-/* ========================= */
-
+/* STATUS + LOG */
 .status {
   background: #181818;
   border-radius: 8px;
@@ -298,10 +270,7 @@ h1 {
   margin-top: 2px;
 }
 
-/* ========================= */
-/* DICE                      */
-/* ========================= */
-
+/* DICE */
 .dice-container {
   perspective: 600px;
   display: flex;
@@ -337,23 +306,12 @@ h1 {
 .face5 { transform: rotateY(90deg) translateZ(30px); }
 .face6 { transform: rotateY(-90deg) translateZ(30px); }
 
-/* ========================= */
-/* RESPONSIVE                */
-/* ========================= */
-
-@media (max-width: 900px) {
-  .board-wrapper {
-    width: 360px;
-    height: 360px;
-  }
-
-  .board {
-    width: 100%;
-    height: 100%;
-  }
+/* RESPONSIVE */
+@media(max-width:900px){
+  .board { width:360px; height:360px; }
 }
 
-@media (max-width: 720px) {
+@media(max-width:720px){
   .game-container {
     flex-direction: column;
     align-items: center;
