@@ -73,11 +73,12 @@ h1 {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  z-index: 10; /* IMPORTANT */
 }
 
 .token-visual {
   position: absolute;
-  width: 5%;      /* small square */
+  width: 5%;
   height: 5%;
   pointer-events: auto;
   display: flex;
@@ -87,9 +88,6 @@ h1 {
   z-index: 20;
 }
 
-
-
-
 .token {
   width: 100%;
   height: 100%;
@@ -98,8 +96,6 @@ h1 {
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-
-
 
 .token.red { background: #ffebee; border-color: #b71c1c; }
 .token.green { background: #e8f5e9; border-color: #1b5e20; }
@@ -320,7 +316,7 @@ h1 {
 }
 
 .face1 { transform: rotateY(0deg) translateZ(30px); }
-face2 { transform: rotateY(180deg) translateZ(30px); }
+.face2 { transform: rotateY(180deg) translateZ(30px); }
 .face3 { transform: rotateX(90deg) translateZ(30px); }
 .face4 { transform: rotateX(-90deg) translateZ(30px); }
 .face5 { transform: rotateY(90deg) translateZ(30px); }
