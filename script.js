@@ -85,6 +85,7 @@ function biasedRollFor(player) {
   if (!player.isCodeRed) {
     return Math.floor(Math.random() * 6) + 1;
   }
+  // Code Red: ~50% chance to get 5 or 6
   if (Math.random() < 0.5) {
     return Math.random() < 0.5 ? 5 : 6;
   }
@@ -127,10 +128,13 @@ function renderTokens() {
       let xPercent;
 
       if (pos === HOME_POS) {
+        // Left side "home" area
         xPercent = 5;
       } else if (pos === FINISHED_POS) {
+        // Right side "finished" area
         xPercent = 95;
       } else {
+        // Linear track across the board
         xPercent = 10 + (pos / (TRACK_LENGTH - 1)) * 80;
       }
 
@@ -171,7 +175,9 @@ function moveToken(player, tokenIndex, roll) {
   }
 
   const newPos = pos + roll;
-  if (newPos > FINFINISHED_POS) {
+
+  // BUG FIX: use FINISHED_POS, not FINFINISHED_POS
+  if (newPos > FINISHED_POS) {
     log(`${player.name} needs an exact roll to finish.`, player.color);
     return;
   }
@@ -185,6 +191,7 @@ function moveToken(player, tokenIndex, roll) {
   tokens[tokenIndex] = newPos;
   log(`${player.name} moved a token to position ${newPos}.`, player.color);
 
+  // Capture logic (if not on a safe index)
   if (!isSafeIndex(newPos)) {
     players.forEach(other => {
       if (other === player) return;
@@ -201,23 +208,27 @@ function moveToken(player, tokenIndex, roll) {
 function autoChooseTokenIndex(player, roll) {
   const tokens = player.tokens;
 
+  // 1) Prefer finishing moves
   for (let i = 0; i < tokens.length; i++) {
     if (tokens[i] >= 0 && tokens[i] < FINISHED_POS && tokens[i] + roll === FINISHED_POS) {
       return i;
     }
   }
 
+  // 2) If roll is 6, try to bring a token out from home
   if (roll === 6) {
     const homeIdx = tokens.findIndex(p => p === HOME_POS);
     if (homeIdx !== -1) return homeIdx;
   }
 
+  // 3) Otherwise, move the first token that can move without overshooting
   for (let i = 0; i < tokens.length; i++) {
     if (tokens[i] >= 0 && tokens[i] < FINISHED_POS && tokens[i] + roll <= FINISHED_POS) {
       return i;
     }
   }
 
+  // 4) No valid moves
   return -1;
 }
 
@@ -287,6 +298,7 @@ btnRoll.addEventListener("click", () => {
 
   const player = players[currentPlayerIndex];
 
+  // Quick fake spin
   const fakeValue = Math.floor(Math.random() * 6) + 1;
   animateDiceTo(fakeValue);
 
