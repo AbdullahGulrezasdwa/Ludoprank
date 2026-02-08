@@ -22,14 +22,12 @@ const nameInputs = {
 // =========================
 const COLORS_IN_ORDER = ["red", "green", "yellow", "blue"];
 const TOKENS_PER_PLAYER = 4;
-const TRACK_LENGTH = 52;       // 0..51 on track, 52 = finished
+const TRACK_LENGTH = 52;
 const HOME_POS = -1;
 const FINISHED_POS = 52;
 
-// Safe zones on the track (classic-ish Ludo style)
 const SAFE_INDICES = [0, 8, 13, 21, 26, 34, 39, 47];
 
-// Starting indices on the track for each color
 const START_INDEX = {
   red: 0,
   green: 13,
@@ -37,7 +35,6 @@ const START_INDEX = {
   blue: 39,
 };
 
-// Visual rows for token tracks (0–3)
 const COLOR_ROW = {
   red: 0,
   green: 1,
@@ -45,7 +42,7 @@ const COLOR_ROW = {
   blue: 3,
 };
 
-let players = [];          // { color, name, isCodeRed, tokens: [pos,...] }
+let players = [];
 let currentPlayerIndex = 0;
 let gameStarted = false;
 let rolling = false;
@@ -74,27 +71,20 @@ function setLastRoll(value) {
 }
 
 // =========================
-/* BOARD VISUAL (BACKGROUND GRID) */
+// BOARD VISUAL
 // =========================
 function buildBoard() {
+  // No grid cells — board image handles visuals
   boardEl.innerHTML = "";
-  for (let i = 0; i < 15 * 15; i++) {
-    const cell = document.createElement("div");
-    cell.className = "cell path";
-    boardEl.appendChild(cell);
-  }
-  // Neutral grid background; your CSS already makes it look like a Ludo board.
 }
 
 // =========================
-/* DICE: 3D ANIMATION + CODE RED BUFF */
+// DICE
 // =========================
 function biasedRollFor(player) {
-  const isCodeRed = player.isCodeRed;
-  if (!isCodeRed) {
+  if (!player.isCodeRed) {
     return Math.floor(Math.random() * 6) + 1;
   }
-  // ~50% chance to bias toward 5 or 6
   if (Math.random() < 0.5) {
     return Math.random() < 0.5 ? 5 : 6;
   }
@@ -116,21 +106,16 @@ function animateDiceTo(value) {
 }
 
 // =========================
-/* TOKEN RENDERING (VISIBLE MOVEMENT) */
+// TOKEN RENDERING
 // =========================
-//
-// token-layer is used as a "track overlay":
-// - Each color gets a horizontal lane (row 0–3).
-// - X position is based on token.pos (0..52).
-// - HOME (-1) is at the far left.
-// - FINISHED (52) is at the far right.
-//
 function renderTokens() {
   tokenLayerEl.innerHTML = "";
-  const laneHeight = 100 / 4; // 4 rows
+
+  const laneHeight = 100 / 4;
 
   players.forEach(player => {
     const row = COLOR_ROW[player.color];
+
     player.tokens.forEach((pos, idx) => {
       const tokenVisual = document.createElement("div");
       tokenVisual.className = "token-visual";
@@ -140,18 +125,17 @@ function renderTokens() {
       tokenVisual.appendChild(token);
 
       let xPercent;
+
       if (pos === HOME_POS) {
-        xPercent = 2; // left side
+        xPercent = 5;
       } else if (pos === FINISHED_POS) {
-        xPercent = 96; // right side
+        xPercent = 95;
       } else {
-        // 0..51 mapped to 10..90%
         xPercent = 10 + (pos / (TRACK_LENGTH - 1)) * 80;
       }
 
       const yPercent = row * laneHeight + laneHeight / 2;
 
-      tokenVisual.style.position = "absolute";
       tokenVisual.style.left = `${xPercent}%`;
       tokenVisual.style.top = `${yPercent}%`;
 
@@ -161,7 +145,7 @@ function renderTokens() {
 }
 
 // =========================
-/* MOVE LOGIC, SAFE ZONES, CAPTURE, WIN */
+// MOVE LOGIC
 // =========================
 function isSafeIndex(index) {
   return SAFE_INDICES.includes(index);
@@ -171,7 +155,6 @@ function moveToken(player, tokenIndex, roll) {
   const tokens = player.tokens;
   let pos = tokens[tokenIndex];
 
-  // If at home
   if (pos === HOME_POS) {
     if (roll === 6) {
       tokens[tokenIndex] = START_INDEX[player.color];
@@ -182,15 +165,13 @@ function moveToken(player, tokenIndex, roll) {
     return;
   }
 
-  // If already finished
   if (pos === FINISHED_POS) {
     log(`${player.name}'s token is already finished.`, player.color);
     return;
   }
 
-  // On track
   const newPos = pos + roll;
-  if (newPos > FINISHED_POS) {
+  if (newPos > FINFINISHED_POS) {
     log(`${player.name} needs an exact roll to finish.`, player.color);
     return;
   }
@@ -204,7 +185,6 @@ function moveToken(player, tokenIndex, roll) {
   tokens[tokenIndex] = newPos;
   log(`${player.name} moved a token to position ${newPos}.`, player.color);
 
-  // Capture logic: if any opponent token is on newPos and it's not safe, send them home
   if (!isSafeIndex(newPos)) {
     players.forEach(other => {
       if (other === player) return;
@@ -221,29 +201,23 @@ function moveToken(player, tokenIndex, roll) {
 function autoChooseTokenIndex(player, roll) {
   const tokens = player.tokens;
 
-  // Priority 1: if any token can finish exactly, do that
   for (let i = 0; i < tokens.length; i++) {
-    const pos = tokens[i];
-    if (pos >= 0 && pos < FINISHED_POS && pos + roll === FINISHED_POS) {
+    if (tokens[i] >= 0 && tokens[i] < FINISHED_POS && tokens[i] + roll === FINISHED_POS) {
       return i;
     }
   }
 
-  // Priority 2: bring a token out of home if roll is 6
   if (roll === 6) {
     const homeIdx = tokens.findIndex(p => p === HOME_POS);
     if (homeIdx !== -1) return homeIdx;
   }
 
-  // Priority 3: move the first token that is on track and can move
   for (let i = 0; i < tokens.length; i++) {
-    const pos = tokens[i];
-    if (pos >= 0 && pos < FINISHED_POS && pos + roll <= FINISHED_POS) {
+    if (tokens[i] >= 0 && tokens[i] < FINISHED_POS && tokens[i] + roll <= FINISHED_POS) {
       return i;
     }
   }
 
-  // No valid move
   return -1;
 }
 
@@ -258,17 +232,15 @@ function checkWin(player) {
 }
 
 // =========================
-/* TURN HANDLING */
+// TURN HANDLING
 // =========================
 function nextPlayer() {
-  if (players.length === 0) return;
   currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-  const p = players[currentPlayerIndex];
-  setStatusPlayer(p);
+  setStatusPlayer(players[currentPlayerIndex]);
 }
 
 // =========================
-/* EVENT HANDLERS */
+// EVENT HANDLERS
 // =========================
 btnStart.addEventListener("click", () => {
   players = [];
@@ -296,9 +268,9 @@ btnStart.addEventListener("click", () => {
   buildBoard();
   renderTokens();
 
-  const first = players[0];
-  setStatusPlayer(first);
-  log("Game started!", null);
+  setStatusPlayer(players[0]);
+  log("Game started!");
+
   players.forEach(p => {
     if (p.isCodeRed) {
       log(`${p.name} has the CODE RED buff (better 5/6 odds).`, p.color);
@@ -310,11 +282,11 @@ btnStart.addEventListener("click", () => {
 });
 
 btnRoll.addEventListener("click", () => {
-  if (!gameStarted || rolling || players.length === 0) return;
+  if (!gameStarted || rolling) return;
   rolling = true;
+
   const player = players[currentPlayerIndex];
 
-  // Fake spin
   const fakeValue = Math.floor(Math.random() * 6) + 1;
   animateDiceTo(fakeValue);
 
@@ -347,7 +319,7 @@ btnRoll.addEventListener("click", () => {
 });
 
 // =========================
-/* INIT */
+// INIT
 // =========================
 buildBoard();
 setLastRoll(null);
