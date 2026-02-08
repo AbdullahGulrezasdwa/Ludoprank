@@ -152,11 +152,8 @@ function renderTokens() {
       const yPercent = row * laneHeight + laneHeight / 2;
 
       tokenVisual.style.position = "absolute";
-      tokenVisual.style.width = "6%";
-      tokenVisual.style.height = "6%";
       tokenVisual.style.left = `${xPercent}%`;
       tokenVisual.style.top = `${yPercent}%`;
-      tokenVisual.style.transform = "translate(-50%, -50%)";
 
       tokenLayerEl.appendChild(tokenVisual);
     });
