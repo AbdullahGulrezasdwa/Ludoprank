@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Classic 4-Player Prank Ludo</title>
+  <title>Classic Prank Ludo 3D</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Classic Prank Ludo</h1>
+  <h1>Classic Prank Ludo 3D</h1>
   <div class="subtitle">4-player classic rules + “Code Red” luck + dice lock.</div>
 
   <div class="game-container">
@@ -19,47 +19,36 @@
       <div>
         <div class="section-title">Players (1–4)</div>
         <div class="players-config">
-          <div class="player-input">
-            <div class="player-label"><span class="color-dot red"></span> Red</div>
-            <input type="text" id="player-red" placeholder="Name (e.g. Code Red)" />
-          </div>
-          <div class="player-input">
-            <div class="player-label"><span class="color-dot green"></span> Green</div>
-            <input type="text" id="player-green" placeholder="Name" />
-          </div>
-          <div class="player-input">
-            <div class="player-label"><span class="color-dot yellow"></span> Yellow</div>
-            <input type="text" id="player-yellow" placeholder="Name" />
-          </div>
-          <div class="player-input">
-            <div class="player-label"><span class="color-dot blue"></span> Blue</div>
-            <input type="text" id="player-blue" placeholder="Name" />
-          </div>
+          <div class="player-input"><div class="player-label"><span class="color-dot red"></span> Red</div><input type="text" id="player-red" placeholder="Name (e.g. Code Red)"></div>
+          <div class="player-input"><div class="player-label"><span class="color-dot green"></span> Green</div><input type="text" id="player-green" placeholder="Name"></div>
+          <div class="player-input"><div class="player-label"><span class="color-dot yellow"></span> Yellow</div><input type="text" id="player-yellow" placeholder="Name"></div>
+          <div class="player-input"><div class="player-label"><span class="color-dot blue"></span> Blue</div><input type="text" id="player-blue" placeholder="Name"></div>
         </div>
         <div class="hint">Leave colors empty if not used. Turn order: Red → Green → Yellow → Blue.</div>
       </div>
 
       <div class="controls">
         <button class="btn btn-primary" id="btn-start">Start Game</button>
+        <div class="dice-container">
+          <div class="dice" id="dice">
+            <div class="face face1">⚀</div>
+            <div class="face face2">⚁</div>
+            <div class="face face3">⚂</div>
+            <div class="face face4">⚃</div>
+            <div class="face face5">⚄</div>
+            <div class="face face6">⚅</div>
+          </div>
+        </div>
         <button class="btn btn-secondary" id="btn-roll" disabled>Roll Dice</button>
       </div>
 
       <div class="status">
-        <div class="status-line">
-          <span class="status-label">Current player</span>
-          <span class="status-value" id="current-player">—</span>
-        </div>
-        <div class="status-line">
-          <span class="status-label">Last roll</span>
-          <span class="status-value" id="last-roll">—</span>
-        </div>
-        <div class="dice-display" id="dice-display">🎲</div>
+        <div class="status-line"><span class="status-label">Current player</span><span class="status-value" id="current-player">—</span></div>
+        <div class="status-line"><span class="status-label">Last roll</span><span class="status-value" id="last-roll">—</span></div>
         <div class="log" id="log"></div>
       </div>
 
-      <div class="hint">
-        Secret: any player named <strong>Code Red</strong> has ~50% extra chance to roll 5 or 6.
-      </div>
+      <div class="hint">Secret: any player named <strong>Code Red</strong> has ~50% extra chance to roll 5 or 6.</div>
     </div>
   </div>
 
