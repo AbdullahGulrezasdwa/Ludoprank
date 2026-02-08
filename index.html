@@ -1,189 +1,68 @@
-<script>
-  // ====== CONSTANTS ======
-  const TRACK_LENGTH = 52;
-  const HOME_STRETCH = 6;
-  const SAFE_MAIN_INDICES = [0, 8, 13, 21, 26, 34, 39, 47];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Classic 4-Player Prank Ludo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Classic Prank Ludo</h1>
+  <div class="subtitle">4-player classic rules + “Code Red” luck + dice lock.</div>
 
-  const RED_START = 0;
-  const GREEN_START = 13;
-  const YELLOW_START = 26;
-  const BLUE_START = 39;
+  <div class="game-container">
+    <div class="board-wrapper">
+      <div class="board" id="board"></div>
+      <div class="token-layer" id="token-layer"></div>
+    </div>
 
-  const RED_HOME_BASE = 52;
-  const GREEN_HOME_BASE = 58;
-  const YELLOW_HOME_BASE = 64;
-  const BLUE_HOME_BASE = 70;
+    <div class="sidebar">
+      <div>
+        <div class="section-title">Players (1–4)</div>
+        <div class="players-config">
+          <div class="player-input">
+            <div class="player-label"><span class="color-dot red"></span> Red</div>
+            <input type="text" id="player-red" placeholder="Name (e.g. Code Red)" />
+          </div>
+          <div class="player-input">
+            <div class="player-label"><span class="color-dot green"></span> Green</div>
+            <input type="text" id="player-green" placeholder="Name" />
+          </div>
+          <div class="player-input">
+            <div class="player-label"><span class="color-dot yellow"></span> Yellow</div>
+            <input type="text" id="player-yellow" placeholder="Name" />
+          </div>
+          <div class="player-input">
+            <div class="player-label"><span class="color-dot blue"></span> Blue</div>
+            <input type="text" id="player-blue" placeholder="Name" />
+          </div>
+        </div>
+        <div class="hint">Leave colors empty if not used. Turn order: Red → Green → Yellow → Blue.</div>
+      </div>
 
-  // ====== DOM ELEMENTS ======
-  const boardEl = document.getElementById("board");
-  const tokenLayerEl = document.getElementById("token-layer");
-  const startBtn = document.getElementById("btn-start");
-  const rollBtn = document.getElementById("btn-roll");
-  const currentPlayerEl = document.getElementById("current-player");
-  const lastRollEl = document.getElementById("last-roll");
-  const diceDisplayEl = document.getElementById("dice-display");
-  const logEl = document.getElementById("log");
+      <div class="controls">
+        <button class="btn btn-primary" id="btn-start">Start Game</button>
+        <button class="btn btn-secondary" id="btn-roll" disabled>Roll Dice</button>
+      </div>
 
-  // ====== BOARD ======
-  const cells = [];
+      <div class="status">
+        <div class="status-line">
+          <span class="status-label">Current player</span>
+          <span class="status-value" id="current-player">—</span>
+        </div>
+        <div class="status-line">
+          <span class="status-label">Last roll</span>
+          <span class="status-value" id="last-roll">—</span>
+        </div>
+        <div class="dice-display" id="dice-display">🎲</div>
+        <div class="log" id="log"></div>
+      </div>
 
-  function createBoard() {
-    for (let r = 0; r < 15; r++) {
-      for (let c = 0; c < 15; c++) {
-        const cell = document.createElement("div");
-        cell.classList.add("cell");
-        boardEl.appendChild(cell);
-        cells.push(cell);
-      }
-    }
+      <div class="hint">
+        Secret: any player named <strong>Code Red</strong> has ~50% extra chance to roll 5 or 6.
+      </div>
+    </div>
+  </div>
 
-    // homes
-    function markHome(rowStart, rowEnd, colStart, colEnd, color) {
-      for (let r = rowStart; r < rowEnd; r++)
-        for (let c = colStart; c < colEnd; c++)
-          cells[r * 15 + c].classList.add("home", color);
-    }
-    markHome(0,6,0,6,"red");
-    markHome(0,6,9,15,"green");
-    markHome(9,15,0,6,"yellow");
-    markHome(9,15,9,15,"blue");
-
-    // center
-    for (let r=6;r<=8;r++)
-      for(let c=6;c<=8;c++)
-        cells[r*15+c].classList.add("center");
-  }
-
-  createBoard();
-
-  // ====== MAIN TRACK ======
-  const mainTrack = [];
-  (function buildMainTrack() {
-    for(let c=0;c<6;c++) mainTrack.push(6*15+c);
-    for(let r=5;r>=0;r--) mainTrack.push(r*15+6);
-    for(let c=7;c<15;c++) mainTrack.push(0*15+c);
-    for(let r=1;r<=5;r++) mainTrack.push(r*15+8);
-    for(let c=9;c<15;c++) mainTrack.push(6*15+c);
-    for(let r=7;r<15;r++) mainTrack.push(r*15+8);
-    for(let c=7;c>=0;c--) mainTrack.push(14*15+c);
-    for(let r=13;r>=7;r--) mainTrack.push(r*15+6);
-    while(mainTrack.length>TRACK_LENGTH) mainTrack.pop();
-
-    mainTrack.forEach((idx,i)=>{
-      cells[idx].classList.add("path");
-      if(SAFE_MAIN_INDICES.includes(i)) cells[idx].classList.add("safe");
-    });
-  })();
-
-  // ====== HOME TRACKS ======
-  const redHomeTrack=[],greenHomeTrack=[],yellowHomeTrack=[],blueHomeTrack=[];
-  (function buildHomeTracks(){
-    for(let c=1;c<=6&&redHomeTrack.length<HOME_STRETCH;c++){ redHomeTrack.push(7*15+c); cells[7*15+c].classList.add("path","red"); }
-    for(let r=1;r<=6&&greenHomeTrack.length<HOME_STRETCH;r++){ greenHomeTrack.push(r*15+7); cells[r*15+7].classList.add("path","green"); }
-    for(let c=1;c<=6&&yellowHomeTrack.length<HOME_STRETCH;c++){ yellowHomeTrack.push(8*15+c); cells[8*15+c].classList.add("path","yellow"); }
-    for(let c=8;c<14&&blueHomeTrack.length<HOME_STRETCH;c++){ blueHomeTrack.push(8*15+c); cells[8*15+c].classList.add("path","blue"); }
-  })();
-
-  // ====== PLAYERS ======
-  const players = [
-    { color:"red",name:"",startIndex:RED_START,homeBase:RED_HOME_BASE,homeTrack:redHomeTrack,tokens:[-1,-1,-1,-1],finished:0 },
-    { color:"green",name:"",startIndex:GREEN_START,homeBase:GREEN_HOME_BASE,homeTrack:greenHomeTrack,tokens:[-1,-1,-1,-1],finished:0 },
-    { color:"yellow",name:"",startIndex:YELLOW_START,homeBase:YELLOW_HOME_BASE,homeTrack:yellowHomeTrack,tokens:[-1,-1,-1,-1],finished:0 },
-    { color:"blue",name:"",startIndex:BLUE_START,homeBase:BLUE_HOME_BASE,homeTrack:blueHomeTrack,tokens:[-1,-1,-1,-1],finished:0 }
-  ];
-
-  let activePlayers = [], currentPlayerIndex = 0, currentRoll=null, gameStarted=false;
-
-  // ====== UTILS ======
-  function addLog(text){ const div=document.createElement("div"); div.classList.add("log-entry"); div.innerHTML=text; logEl.prepend(div); }
-  function rollEmoji(r){ const map={1:"⚀",2:"⚁",3:"⚂",4:"⚃",5:"⚄",6:"⚅"}; return map[r]||"🎲"; }
-  function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1);}
-  function updateCurrentPlayerUI(){
-    if(activePlayers.length===0){currentPlayerEl.textContent="—"; return;}
-    const p=players[activePlayers[currentPlayerIndex]];
-    currentPlayerEl.textContent=`${capitalize(p.color)} (${p.name||"?"})`;
-  }
-
-  // ====== DICE ======
-  function prankRoll(name){
-    const isCodeRed=name.trim().toLowerCase()==="code red";
-    if(isCodeRed) return Math.random()<0.5?(Math.random()<0.5?5:6):Math.floor(Math.random()*6)+1;
-    return Math.floor(Math.random()*6)+1;
-  }
-
-  // ====== TOKENS ======
-  function clearTokens(){tokenLayerEl.innerHTML="";}
-  function renderTokens(){
-    clearTokens();
-    players.forEach((p,pIndex)=>{
-      p.tokens.forEach((pos,tIndex)=>{
-        if(pos===100) return;
-        const tokenDiv=document.createElement("div"); tokenDiv.classList.add("token-visual");
-        let cellIndex=null;
-        if(pos===-1){ // home yard
-          let baseRow,baseCol;
-          if(p.color==="red"){baseRow=1;baseCol=1;}
-          else if(p.color==="green"){baseRow=1;baseCol=12;}
-          else if(p.color==="yellow"){baseRow=12;baseCol=1;}
-          else{baseRow=12;baseCol=12;}
-          const offsetRow=Math.floor(tIndex/2), offsetCol=tIndex%2;
-          cellIndex=(baseRow+offsetRow)*15+(baseCol+offsetCol);
-        } else if(pos>=0&&pos<TRACK_LENGTH) cellIndex=mainTrack[pos];
-        else if(pos>=RED_HOME_BASE&&pos<RED_HOME_BASE+HOME_STRETCH) cellIndex=redHomeTrack[pos-RED_HOME_BASE];
-        else if(pos>=GREEN_HOME_BASE&&pos<GREEN_HOME_BASE+HOME_STRETCH) cellIndex=greenHomeTrack[pos-GREEN_HOME_BASE];
-        else if(pos>=YELLOW_HOME_BASE&&pos<YELLOW_HOME_BASE+HOME_STRETCH) cellIndex=yellowHomeTrack[pos-YELLOW_HOME_BASE];
-        else if(pos>=BLUE_HOME_BASE&&pos<BLUE_HOME_BASE+HOME_STRETCH) cellIndex=blueHomeTrack[pos-BLUE_HOME_BASE];
-
-        if(cellIndex==null) return;
-        const cell=cells[cellIndex];
-        const rect=cell.getBoundingClientRect();
-        const boardRect=boardEl.getBoundingClientRect();
-        const x=rect.left-boardRect.left, y=rect.top-boardRect.top;
-        tokenDiv.style.left=x+"px"; tokenDiv.style.top=y+"px";
-        tokenDiv.style.width=rect.width+"px"; tokenDiv.style.height=rect.height+"px";
-        const inner=document.createElement("div"); inner.classList.add("token",p.color);
-        inner.dataset.playerIndex=pIndex; inner.dataset.tokenIndex=tIndex;
-        tokenDiv.appendChild(inner); tokenLayerEl.appendChild(tokenDiv);
-      });
-    });
-  }
-
-  // ====== GAME LOGIC ======
-  function startGame(){
-    players.forEach(p=>{
-      const input=document.getElementById("player-"+p.color);
-      p.name=input.value.trim();
-    });
-    activePlayers=players.map((p,i)=>p.name?i:null).filter(i=>i!==null);
-    if(activePlayers.length===0){ alert("Enter at least one player!"); return;}
-    gameStarted=true; currentPlayerIndex=0; currentRoll=null;
-    rollBtn.disabled=false; updateCurrentPlayerUI(); addLog("Game started!"); renderTokens();
-  }
-
-  function nextPlayer(){ currentPlayerIndex=(currentPlayerIndex+1)%activePlayers.length; updateCurrentPlayerUI(); }
-
-  rollBtn.addEventListener("click",()=>{
-    if(!gameStarted) return;
-    const player=players[activePlayers[currentPlayerIndex]];
-    currentRoll=prankRoll(player.name);
-    diceDisplayEl.textContent=rollEmoji(currentRoll);
-    lastRollEl.textContent=currentRoll;
-    addLog(`${capitalize(player.color)} rolled ${currentRoll}`);
-
-    // Move first movable token (simple auto move for now)
-    let moved=false;
-    for(let i=0;i<player.tokens.length;i++){
-      let pos=player.tokens[i];
-      if(pos===-1&&currentRoll===6){player.tokens[i]=player.startIndex; moved=true; break;}
-      else if(pos>=0&&pos<TRACK_LENGTH+HOME_STRETCH){ player.tokens[i]+=currentRoll; if(player.tokens[i]>=TRACK_LENGTH+HOME_STRETCH){player.tokens[i]=100; player.finished++; } moved=true; break;}
-    }
-    if(!moved) addLog(`${capitalize(player.color)} cannot move any token.`);
-
-    renderTokens();
-    setTimeout(nextPlayer,600);
-  });
-
-  startBtn.addEventListener("click",startGame);
-
-  window.addEventListener("resize", renderTokens);
-</script>
+  <script src="script.js"></script>
+</body>
+</html>
