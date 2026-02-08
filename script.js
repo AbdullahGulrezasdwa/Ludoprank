@@ -37,7 +37,7 @@ const START_INDEX = {
   blue: 39,
 };
 
-// Simple rows for visual token tracks (0–3)
+// Visual rows for token tracks (0–3)
 const COLOR_ROW = {
   red: 0,
   green: 1,
@@ -74,7 +74,7 @@ function setLastRoll(value) {
 }
 
 // =========================
-// BOARD VISUAL (BACKGROUND GRID)
+/* BOARD VISUAL (BACKGROUND GRID) */
 // =========================
 function buildBoard() {
   boardEl.innerHTML = "";
@@ -83,12 +83,11 @@ function buildBoard() {
     cell.className = "cell path";
     boardEl.appendChild(cell);
   }
-  // This is a neutral grid background. You can later upgrade it
-  // to a full Ludo layout using .home.*, .path.*, .center, etc.
+  // Neutral grid background; your CSS already makes it look like a Ludo board.
 }
 
 // =========================
-// DICE: 3D ANIMATION + CODE RED BUFF
+/* DICE: 3D ANIMATION + CODE RED BUFF */
 // =========================
 function biasedRollFor(player) {
   const isCodeRed = player.isCodeRed;
@@ -117,10 +116,10 @@ function animateDiceTo(value) {
 }
 
 // =========================
-// TOKEN RENDERING (VISIBLE MOVEMENT)
+/* TOKEN RENDERING (VISIBLE MOVEMENT) */
 // =========================
 //
-// We use the token-layer as a "track overlay":
+// token-layer is used as a "track overlay":
 // - Each color gets a horizontal lane (row 0–3).
 // - X position is based on token.pos (0..52).
 // - HOME (-1) is at the far left.
@@ -140,7 +139,6 @@ function renderTokens() {
       token.className = `token ${player.color}`;
       tokenVisual.appendChild(token);
 
-      // Compute position
       let xPercent;
       if (pos === HOME_POS) {
         xPercent = 2; // left side
@@ -166,7 +164,7 @@ function renderTokens() {
 }
 
 // =========================
-// MOVE LOGIC, SAFE ZONES, CAPTURE, WIN
+/* MOVE LOGIC, SAFE ZONES, CAPTURE, WIN */
 // =========================
 function isSafeIndex(index) {
   return SAFE_INDICES.includes(index);
@@ -263,7 +261,7 @@ function checkWin(player) {
 }
 
 // =========================
-// TURN HANDLING
+/* TURN HANDLING */
 // =========================
 function nextPlayer() {
   if (players.length === 0) return;
@@ -273,7 +271,7 @@ function nextPlayer() {
 }
 
 // =========================
-// EVENT HANDLERS
+/* EVENT HANDLERS */
 // =========================
 btnStart.addEventListener("click", () => {
   players = [];
@@ -352,7 +350,7 @@ btnRoll.addEventListener("click", () => {
 });
 
 // =========================
-// INIT
+/* INIT */
 // =========================
 buildBoard();
 setLastRoll(null);
